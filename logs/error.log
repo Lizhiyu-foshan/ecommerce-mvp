@@ -1,1 +1,15 @@
 2026-02-21 12:43:45 | ERROR    | ecommerce | <stdin>:13 | 这是一条 ERROR 日志 - 用于记录错误信息
+2026-02-21 15:24:29 | ERROR    | ecommerce | transaction.py:41 | 业务错误，事务回滚: failing_operation, 错误: 模拟业务错误
+2026-02-21 15:24:29 | ERROR    | ecommerce | transaction.py:41 | 业务错误，事务回滚: create_order_from_cart, 错误: 库存不足: Test Product 128899137761504, 需要=3, 库存=1
+2026-02-21 15:24:30 | ERROR    | ecommerce | transaction.py:80 | 事务上下文发生异常，已回滚: 测试回滚
+2026-02-21 15:24:31 | ERROR    | ecommerce | transaction.py:41 | 业务错误，事务回滚: add_to_cart, 错误: 库存不足，当前库存: 10
+2026-02-21 15:24:41 | ERROR    | ecommerce | transaction.py:41 | 业务错误，事务回滚: failing_operation, 错误: 模拟业务错误
+2026-02-21 15:24:41 | ERROR    | ecommerce | transaction.py:41 | 业务错误，事务回滚: create_order_from_cart, 错误: 库存不足: Test Product 136377235763856, 需要=3, 库存=1
+2026-02-21 15:24:42 | ERROR    | ecommerce | transaction.py:80 | 事务上下文发生异常，已回滚: 测试回滚
+2026-02-21 15:24:43 | ERROR    | ecommerce | transaction.py:41 | 业务错误，事务回滚: add_to_cart, 错误: 库存不足，当前库存: 10
+2026-02-21 15:25:17 | ERROR    | ecommerce | transaction.py:41 | 业务错误，事务回滚: add_to_cart, 错误: 商品已下架
+2026-02-21 15:25:18 | ERROR    | ecommerce | transaction.py:41 | 业务错误，事务回滚: add_to_cart, 错误: 库存不足，当前库存: 1
+2026-02-21 15:25:20 | ERROR    | ecommerce | transaction.py:41 | 业务错误，事务回滚: add_to_cart, 错误: 商品已下架
+2026-02-21 15:27:32 | ERROR    | ecommerce | transaction.py:41 | 业务错误，事务回滚: add_to_cart, 错误: 库存不足，当前库存: 1
+2026-02-21 15:27:33 | ERROR    | ecommerce | transaction.py:41 | 业务错误，事务回滚: add_to_cart, 错误: 库存不足，当前库存: 1
+2026-02-21 15:27:34 | ERROR    | ecommerce | transaction.py:41 | 业务错误，事务回滚: add_to_cart, 错误: 库存不足，当前库存: 1

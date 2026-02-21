@@ -1,6 +1,6 @@
 """
 统一数据模型
-包含：用户、订单、支付三个模块的模型
+包含：用户、订单、支付、商品、购物车、地址六个模块的模型
 """
 from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Enum, Text
 from sqlalchemy.orm import relationship
@@ -8,16 +8,22 @@ from sqlalchemy.sql import func
 from database import Base
 import enum
 
+# 导入新模型
+from models.product import Category, Product, ProductSpec
+from models.cart import Cart
+from models.address import Address
+
 
 # ==================== 用户模块 ====================
 class User(Base):
     __tablename__ = "users"
     
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     username = Column(String(50), unique=True, index=True, nullable=False)
     email = Column(String(100), unique=True, index=True, nullable=False)
     hashed_password = Column(String(255), nullable=False)
     is_active = Column(Integer, default=1)  # 1=active, 0=inactive
+    is_admin = Column(Integer, default=0)  # 1=admin, 0=normal user  # ✅ 添加管理员字段
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     
@@ -38,7 +44,7 @@ class OrderStatus(str, enum.Enum):
 class Order(Base):
     __tablename__ = "orders"
     
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     order_no = Column(String(50), unique=True, index=True, nullable=False)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     product_id = Column(String(100), nullable=False)
@@ -73,7 +79,7 @@ class PaymentMethod(str, enum.Enum):
 class Payment(Base):
     __tablename__ = "payments"
     
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     payment_no = Column(String(50), unique=True, index=True, nullable=False)
     order_id = Column(Integer, ForeignKey("orders.id"), nullable=False)
     amount = Column(Float, nullable=False)

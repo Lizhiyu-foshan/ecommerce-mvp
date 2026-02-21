@@ -4,15 +4,17 @@ E-Commerce MVP - 统一入口
 """
 from fastapi import FastAPI, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
 import time
+import os
 
 from database import engine, Base
 from config.settings import settings
 from config.logging_config import logger, RequestLogMiddleware
 
 # 导入路由
-from routers import auth, orders, payment
+from routers import auth, orders, payment, products, cart, addresses
 
 
 @asynccontextmanager
@@ -30,7 +32,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title=settings.APP_NAME,
-    description="电商系统 MVP - 包含用户认证、订单管理、支付处理",
+    description="电商系统 MVP - 包含用户认证、商品管理、购物车、订单管理、支付处理、地址管理",
     version=settings.APP_VERSION,
     lifespan=lifespan
 )
@@ -49,8 +51,16 @@ app.add_middleware(
 
 # 注册路由
 app.include_router(auth.router)
+app.include_router(products.router)
+app.include_router(cart.router)
+app.include_router(addresses.router)
 app.include_router(orders.router)
 app.include_router(payment.router)
+
+# 静态文件服务（图片上传）
+uploads_dir = os.path.join(os.path.dirname(__file__), "uploads")
+os.makedirs(uploads_dir, exist_ok=True)
+app.mount("/uploads", StaticFiles(directory=uploads_dir), name="uploads")
 
 
 @app.get("/")
@@ -64,6 +74,9 @@ def root():
         "docs": "/docs",
         "endpoints": {
             "auth": "/auth",
+            "products": "/api/v1/products",
+            "cart": "/api/v1/cart",
+            "addresses": "/api/v1/addresses",
             "orders": "/orders",
             "payment": "/payment"
         }
