@@ -1,0 +1,368 @@
+#!/bin/bash
+# BMAD-METHOD for OpenClaw - 使用 Kimi Claw 原生多 Agent 能力
+# 通过 sessions_spawn 启动多 Agent
+
+set -e
+
+SKILL_DIR="/root/.openclaw/skills/bmad-method"
+PROJECT_DIR="${1:-$(pwd)}"
+COMMAND="${2:-help}"
+
+# 颜色定义
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+CYAN='\033[0;36m'
+NC='\033[0m'
+
+# 日志函数
+log_info() {
+    echo -e "${BLUE}[INFO]${NC} $1"
+}
+
+log_success() {
+    echo -e "${GREEN}[SUCCESS]${NC} $1"
+}
+
+log_warn() {
+    echo -e "${YELLOW}[WARN]${NC} $1"
+}
+
+log_error() {
+    echo -e "${RED}[ERROR]${NC} $1"
+}
+
+# 显示 Banner
+show_banner() {
+    echo -e "${CYAN}"
+    echo "╔════════════════════════════════════════════════════════════╗"
+    echo "║                                                            ║"
+    echo "║   🚀 BMAD-METHOD for OpenClaw                             ║"
+    echo "║   Breakthrough Method of Agile AI Driven Development      ║"
+    echo "║                                                            ║"
+    echo "╚════════════════════════════════════════════════════════════╝"
+    echo -e "${NC}"
+}
+
+# 显示帮助
+show_help() {
+    show_banner
+    echo ""
+    echo "用法: bmad-method [项目路径] [命令]"
+    echo ""
+    echo -e "${CYAN}命令:${NC}"
+    echo ""
+    echo -e "  ${GREEN}帮助${NC}"
+    echo "    help              显示帮助信息"
+    echo ""
+    echo -e "  ${GREEN}快速流程${NC}"
+    echo "    quick             快速开发流程 (分析师→开发者→QA)"
+    echo ""
+    echo -e "  ${GREEN}完整流程${NC}"
+    echo "    full              完整开发流程 (所有角色)"
+    echo ""
+    echo -e "  ${GREEN}单独角色${NC}"
+    echo "    analyst           业务分析师 - 创建项目简报"
+    echo "    pm                产品经理 - 创建 PRD"
+    echo "    architect         架构师 - 创建架构设计"
+    echo "    dev               开发者 - 开发用户故事"
+    echo "    qa                QA工程师 - 代码审查"
+    echo ""
+    echo -e "  ${GREEN}并行执行${NC}"
+    echo "    parallel-design   并行执行架构师和 UX 设计"
+    echo ""
+    echo -e "${CYAN}示例:${NC}"
+    echo "  bmad-method . help"
+    echo "  bmad-method /path/to/project quick"
+    echo "  bmad-method . analyst"
+    echo "  bmad-method . full"
+    echo ""
+}
+
+# 检查依赖
+check_dependencies() {
+    # 检查项目目录
+    if [ ! -d "$PROJECT_DIR" ]; then
+        log_error "项目目录不存在: $PROJECT_DIR"
+        exit 1
+    fi
+    
+    # 创建 docs 目录
+    mkdir -p "$PROJECT_DIR/docs"
+    mkdir -p "$PROJECT_DIR/docs/.bmad-logs"
+    
+    log_info "项目目录: $PROJECT_DIR"
+}
+
+# 启动 Agent (使用 Kimi Claw 的 sessions_spawn)
+launch_agent() {
+    local agent_name=$1
+    local agent_role=$2
+    local task=$3
+    local output_file=$4
+    
+    log_info "启动 Agent: ${CYAN}${agent_name}${NC} (${agent_role})"
+    
+    # 读取系统提示词
+    local system_prompt=""
+    if [ -f "${SKILL_DIR}/agents/${agent_role}.txt" ]; then
+        system_prompt=$(cat "${SKILL_DIR}/agents/${agent_role}.txt")
+    else
+        system_prompt="你是 ${agent_name}，负责 ${task}。请专业地完成你的工作。"
+    fi
+    
+    # 构建完整任务
+    local full_task="${system_prompt}
+
+## 当前任务
+${task}
+
+## 项目路径
+${PROJECT_DIR}
+
+## 输出要求
+请将结果保存到: ${output_file}
+"
+    
+    # 创建任务文件
+    local task_file="${PROJECT_DIR}/docs/.bmad-logs/${agent_role}-task-$(date +%s).txt"
+    echo "$full_task" > "$task_file"
+    
+    log_info "任务已保存到: $task_file"
+    log_info "请手动运行以下命令启动 Agent:"
+    echo ""
+    echo -e "${CYAN}openclaw sessions_spawn --task-file ${task_file}${NC}"
+    echo ""
+    
+    # 返回任务文件路径
+    echo "$task_file"
+}
+
+# 执行分析师
+run_analyst() {
+    log_info "📋 业务分析师开始工作..."
+    
+    local task="分析这个项目的需求，创建一份项目简报。
+
+请分析:
+1. 项目背景和目标
+2. 目标用户群体
+3. 核心痛点和价值主张
+4. MVP 范围
+5. 成功指标
+
+输出保存到 docs/project-brief.md"
+    
+    launch_agent "业务分析师 Mary" "analyst" "$task" "docs/project-brief.md"
+}
+
+# 执行产品经理
+run_pm() {
+    log_info "📋 产品经理开始工作..."
+    
+    # 检查项目简报
+    if [ ! -f "$PROJECT_DIR/docs/project-brief.md" ]; then
+        log_warn "未找到项目简报，先执行分析师..."
+        run_analyst
+        return
+    fi
+    
+    local task="基于项目简报 docs/project-brief.md，创建详细的产品需求文档(PRD)。
+
+请创建:
+1. 详细的功能需求
+2. 用户故事和验收标准
+3. 功能优先级 (MoSCoW)
+4. Epic 划分
+5. 产品路线图
+
+输出保存到 docs/prd.md"
+    
+    launch_agent "产品经理 John" "pm" "$task" "docs/prd.md"
+}
+
+# 执行架构师
+run_architect() {
+    log_info "🏗️  架构师开始工作..."
+    
+    # 检查 PRD
+    if [ ! -f "$PROJECT_DIR/docs/prd.md" ]; then
+        log_warn "未找到 PRD，先执行产品经理..."
+        run_pm
+        return
+    fi
+    
+    local task="基于 PRD docs/prd.md，设计系统架构。
+
+请设计:
+1. 技术栈选择
+2. 系统架构图
+3. 数据模型
+4. API 设计
+5. 非功能需求 (性能、安全、扩展性)
+
+输出保存到 docs/architecture.md"
+    
+    launch_agent "架构师 Winston" "architect" "$task" "docs/architecture.md"
+}
+
+# 执行开发者
+run_dev() {
+    log_info "💻 开发者开始工作..."
+    
+    local task="查看项目中的文档，实现功能需求。
+
+请:
+1. 阅读 docs/ 目录下的文档
+2. 实现功能代码
+3. 编写单元测试
+4. 确保代码质量"
+    
+    launch_agent "开发者 Amelia" "dev" "$task" ""
+}
+
+# 执行 QA
+run_qa() {
+    log_info "🔍 QA 工程师开始工作..."
+    
+    local task="审查项目代码质量。
+
+请:
+1. 审查代码质量
+2. 检查测试覆盖率
+3. 输出审查报告
+
+报告保存到 docs/code-review.md"
+    
+    launch_agent "QA 工程师 Quinn" "qa" "$task" "docs/code-review.md"
+}
+
+# 快速流程
+run_quick() {
+    show_banner
+    log_info "⚡ 启动快速开发流程"
+    echo ""
+    
+    log_info "快速流程包含 3 个阶段:"
+    echo "  1. 分析师 - 创建项目简报"
+    echo "  2. 开发者 - 实现功能"
+    echo "  3. QA - 代码审查"
+    echo ""
+    
+    # Step 1
+    echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    log_info "Step 1: 业务分析师"
+    run_analyst
+    echo ""
+    
+    # Step 2
+    echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    log_info "Step 2: 开发者"
+    run_dev
+    echo ""
+    
+    # Step 3
+    echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    log_info "Step 3: QA 工程师"
+    run_qa
+    echo ""
+    
+    echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    log_success "快速流程任务已创建！"
+    echo ""
+    log_info "请查看 ${PROJECT_DIR}/docs/.bmad-logs/ 目录中的任务文件"
+    log_info "使用 'openclaw sessions_spawn --task-file <文件>' 启动每个 Agent"
+}
+
+# 完整流程
+run_full() {
+    show_banner
+    log_info "🚀 启动完整开发流程"
+    echo ""
+    
+    log_info "完整流程包含 4 个阶段:"
+    echo "  Phase 1: 规划 (分析师 → 产品经理)"
+    echo "  Phase 2: 设计 (架构师 ∥ UX设计师) 并行"
+    echo "  Phase 3: 开发 (开发者)"
+    echo "  Phase 4: 审查 (QA)"
+    echo ""
+    
+    # Phase 1
+    echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    log_info "Phase 1: 项目规划"
+    echo ""
+    run_analyst
+    echo ""
+    run_pm
+    echo ""
+    
+    # Phase 2
+    echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    log_info "Phase 2: 设计 (并行执行)"
+    echo ""
+    run_architect
+    echo ""
+    log_info "注意: 架构师任务可以与其他任务并行执行"
+    echo ""
+    
+    # Phase 3
+    echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    log_info "Phase 3: 开发实现"
+    echo ""
+    run_dev
+    echo ""
+    
+    # Phase 4
+    echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    log_info "Phase 4: 代码审查"
+    echo ""
+    run_qa
+    echo ""
+    
+    echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    log_success "完整流程任务已创建！"
+    echo ""
+    log_info "所有任务文件保存在: ${PROJECT_DIR}/docs/.bmad-logs/"
+    log_info "使用 'openclaw sessions_spawn --task-file <文件>' 启动每个 Agent"
+}
+
+# 主逻辑
+main() {
+    check_dependencies
+    
+    case "$COMMAND" in
+        help|--help|-h)
+            show_help
+            ;;
+        quick)
+            run_quick
+            ;;
+        full)
+            run_full
+            ;;
+        analyst)
+            run_analyst
+            ;;
+        pm)
+            run_pm
+            ;;
+        architect)
+            run_architect
+            ;;
+        dev)
+            run_dev
+            ;;
+        qa)
+            run_qa
+            ;;
+        *)
+            log_error "未知命令: $COMMAND"
+            echo ""
+            show_help
+            exit 1
+            ;;
+    esac
+}
+
+main "$@"
