@@ -12,7 +12,7 @@ aiosqlite==0.19.0  # Async SQLite for future scaling
 
 # Authentication
 pyjwt==2.8.0
-passlib[bcrypt]==1.7.4
+bcrypt==4.1.2  # 直接使用 bcrypt，避免 passlib 兼容性问题
 python-jose[cryptography]==3.3.0
 python-multipart==0.0.6
 

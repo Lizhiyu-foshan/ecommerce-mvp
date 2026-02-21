@@ -1,18 +1,16 @@
 """
 用户认证服务
 整合自 module-auth
+修复 bcrypt 兼容性问题
 """
 from datetime import datetime, timedelta
 from typing import Optional
 from jose import JWTError, jwt
-from passlib.context import CryptContext
+import bcrypt  # 直接使用 bcrypt 而不是 passlib
 from sqlalchemy.orm import Session
 from models import User
 from models.schemas import UserCreate, UserUpdate
 from config.settings import settings
-
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 class AuthService:
@@ -20,11 +18,23 @@ class AuthService:
     
     @staticmethod
     def verify_password(plain_password: str, hashed_password: str) -> bool:
-        return pwd_context.verify(plain_password, hashed_password)
+        """验证密码 - 使用原生 bcrypt"""
+        try:
+            # bcrypt 接受 bytes，需要编码
+            plain_bytes = plain_password.encode('utf-8')
+            hash_bytes = hashed_password.encode('utf-8')
+            return bcrypt.checkpw(plain_bytes, hash_bytes)
+        except Exception:
+            return False
     
     @staticmethod
     def get_password_hash(password: str) -> str:
-        return pwd_context.hash(password)
+        """生成密码哈希 - 使用原生 bcrypt"""
+        # bcrypt 限制 72 字节，需要截断
+        password_bytes = password.encode('utf-8')[:72]
+        salt = bcrypt.gensalt(rounds=12)
+        hashed = bcrypt.hashpw(password_bytes, salt)
+        return hashed.decode('utf-8')
     
     @staticmethod
     def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
