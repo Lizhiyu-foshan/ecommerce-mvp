@@ -2,12 +2,14 @@
 E-Commerce MVP - 统一入口
 单体架构（预留微服务迁移接口）
 """
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
+import time
 
 from database import engine, Base
 from config.settings import settings
+from config.logging_config import logger, RequestLogMiddleware
 
 # 导入路由
 from routers import auth, orders, payment
@@ -18,11 +20,12 @@ async def lifespan(app: FastAPI):
     """应用生命周期管理"""
     # 启动时创建数据库表
     Base.metadata.create_all(bind=engine)
-    print(f"🚀 {settings.APP_NAME} v{settings.APP_VERSION} 启动成功!")
-    print(f"📊 架构模式: {settings.ARCHITECTURE_MODE}")
+    logger.info(f"🚀 {settings.APP_NAME} v{settings.APP_VERSION} 启动成功!")
+    logger.info(f"📊 架构模式: {settings.ARCHITECTURE_MODE}")
+    logger.info(f"📝 日志级别: {settings.LOG_LEVEL}")
     yield
     # 关闭时清理资源
-    print("👋 应用关闭")
+    logger.info("👋 应用关闭")
 
 
 app = FastAPI(
@@ -31,6 +34,9 @@ app = FastAPI(
     version=settings.APP_VERSION,
     lifespan=lifespan
 )
+
+# 请求日志中间件
+app.add_middleware(RequestLogMiddleware)
 
 # CORS 配置
 app.add_middleware(
@@ -50,6 +56,7 @@ app.include_router(payment.router)
 @app.get("/")
 def root():
     """根路径 - API 信息"""
+    logger.info("访问根路径 /")
     return {
         "name": settings.APP_NAME,
         "version": settings.APP_VERSION,
@@ -66,6 +73,7 @@ def root():
 @app.get("/health")
 def health_check():
     """健康检查"""
+    logger.debug("健康检查调用")
     return {
         "status": "healthy",
         "mode": settings.ARCHITECTURE_MODE,

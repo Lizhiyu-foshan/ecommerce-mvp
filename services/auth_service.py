@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 from models import User
 from models.schemas import UserCreate, UserUpdate
 from config.settings import settings
+from config.logging_config import logger, audit_log
 
 
 class AuthService:
@@ -24,7 +25,8 @@ class AuthService:
             plain_bytes = plain_password.encode('utf-8')
             hash_bytes = hashed_password.encode('utf-8')
             return bcrypt.checkpw(plain_bytes, hash_bytes)
-        except Exception:
+        except Exception as e:
+            logger.error(f"密码验证失败: {str(e)}")
             return False
     
     @staticmethod
@@ -74,6 +76,7 @@ class AuthService:
     
     @staticmethod
     def create_user(db: Session, user: UserCreate) -> User:
+        logger.info(f"创建新用户: {user.username}")
         hashed_password = AuthService.get_password_hash(user.password)
         db_user = User(
             username=user.username,
@@ -83,32 +86,43 @@ class AuthService:
         db.add(db_user)
         db.commit()
         db.refresh(db_user)
+        logger.info(f"用户创建成功: ID={db_user.id}")
+        audit_log("user_created", str(db_user.id), {"username": user.username})
         return db_user
     
     @staticmethod
     def update_user(db: Session, user_id: int, user_update: UserUpdate) -> Optional[User]:
+        logger.info(f"更新用户: ID={user_id}")
         db_user = AuthService.get_user_by_id(db, user_id)
         if not db_user:
+            logger.warning(f"用户不存在: ID={user_id}")
             return None
         
         update_data = user_update.dict(exclude_unset=True)
         if "password" in update_data:
             update_data["hashed_password"] = AuthService.get_password_hash(update_data.pop("password"))
+            logger.info(f"用户 {user_id} 更新密码")
         
         for field, value in update_data.items():
             setattr(db_user, field, value)
         
         db.commit()
         db.refresh(db_user)
+        logger.info(f"用户更新成功: ID={user_id}")
+        audit_log("user_updated", str(user_id), update_data)
         return db_user
     
     @staticmethod
     def delete_user(db: Session, user_id: int) -> bool:
+        logger.info(f"删除用户: ID={user_id}")
         db_user = AuthService.get_user_by_id(db, user_id)
         if not db_user:
+            logger.warning(f"删除失败，用户不存在: ID={user_id}")
             return False
         db.delete(db_user)
         db.commit()
+        logger.info(f"用户删除成功: ID={user_id}")
+        audit_log("user_deleted", str(user_id), {"username": db_user.username})
         return True
 
 

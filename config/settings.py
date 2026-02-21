@@ -30,6 +30,10 @@ class Settings(BaseSettings):
     # CORS 配置
     CORS_ORIGINS: list = ["*"]
     
+    # 日志配置
+    LOG_LEVEL: str = "INFO"  # DEBUG/INFO/WARNING/ERROR/CRITICAL
+    LOG_DIR: str = "/root/.openclaw/workspace/projects/ecommerce-mvp/logs"
+    
     # 微服务通信预留配置
     # AUTH_SERVICE_URL: str = "http://auth-service:8000"
     # ORDER_SERVICE_URL: str = "http://order-service:8000"
