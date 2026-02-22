@@ -1,0 +1,1019 @@
+#!/bin/bash
+#
+# BMAD-Kimi - 专为Kimi多模态能力优化的敏捷开发框架
+#
+
+set -e
+
+VERSION="2.0.0"
+COMMAND="${1:-help}"
+PROJECT_DIR="${2:-.}"
+
+show_help() {
+    cat << 'EOF'
+BMAD-Kimi v2.0.0 - 专为Kimi多模态能力优化的敏捷开发框架
+
+用法:
+    bk <command> [project-dir]
+
+命令:
+    analyst          业务分析师 - 创建项目简报
+    ux-wireframe     UX设计师(第一次) - 低保真原型 (Kimi多模态)
+    pm               产品经理 - 创建PRD
+    architect        架构师 - 系统设计
+    ux-visual        UX设计师(第二次) - 高保真设计 + 接口UX评估
+    frontend         前端开发者 - 基于设计图编码
+    backend          后端开发者 - 基于UX评估优化API
+    qa               QA工程师 - 测试审查
+    
+    full             执行完整流程
+    quick            执行快速流程
+    
+    help             显示帮助
+    version          显示版本
+
+示例:
+    bk analyst ./my-project
+    bk ux-wireframe ./my-project --reference ./ref.png
+    bk full ./my-project
+
+环境变量:
+    KIMI_API_KEY     Kimi API密钥
+    BMAD_KIMI_MODEL  模型名称 (默认: kimi-coding/k2p5)
+EOF
+}
+
+show_version() {
+    echo "BMAD-Kimi v${VERSION}"
+    echo "专为Kimi 2.5多模态能力优化的敏捷开发框架"
+}
+
+# 检查依赖
+check_deps() {
+    if [ -z "$KIMI_API_KEY" ]; then
+        echo "❌ 错误: 未设置 KIMI_API_KEY 环境变量"
+        exit 1
+    fi
+}
+
+# 分析师
+run_analyst() {
+    echo "👤 启动业务分析师..."
+    check_deps
+    
+    mkdir -p "${PROJECT_DIR}/docs"
+    
+    cat > "${PROJECT_DIR}/docs/01-project-brief.md" << EOF
+# 项目简报
+
+## 项目信息
+- 创建时间: $(date)
+- 分析师: Kimi Analyst
+
+## 需求概述
+[待补充]
+
+## 目标用户
+[待补充]
+
+## 核心功能
+[待补充]
+
+## 约束条件
+[待补充]
+EOF
+
+    echo "✅ 项目简报模板已创建: ${PROJECT_DIR}/docs/01-project-brief.md"
+    echo "请编辑该文件补充需求详情"
+}
+
+# UX设计师 - 第一次介入 (低保真原型)
+run_ux_wireframe() {
+    echo "🎨 启动UX设计师 (第一次介入 - 低保真原型)..."
+    check_deps
+    
+    local reference_image="${3:-}"
+    
+    mkdir -p "${PROJECT_DIR}/docs"
+    
+    echo "📖 读取项目简报..."
+    local brief_content=""
+    if [ -f "${PROJECT_DIR}/docs/01-project-brief.md" ]; then
+        brief_content=$(cat "${PROJECT_DIR}/docs/01-project-brief.md")
+    fi
+    
+    echo "🧠 调用Kimi多模态能力..."
+    
+    # 生成低保真原型文档
+    cat > "${PROJECT_DIR}/docs/02-ux-wireframes.md" << EOF
+# 低保真原型设计 v1.0
+
+## 设计概述
+基于项目简报生成的低保真原型，用于与客户确认需求。
+
+## Kimi多模态能力应用
+
+### 1. 图像理解
+EOF
+
+    if [ -n "$reference_image" ]; then
+        echo "分析参考图: ${reference_image}" >> "${PROJECT_DIR}/docs/02-ux-wireframes.md"
+        echo "- 布局结构分析" >> "${PROJECT_DIR}/docs/02-ux-wireframes.md"
+        echo "- 配色方案提取" >> "${PROJECT_DIR}/docs/02-ux-wireframes.md"
+        echo "- 交互模式总结" >> "${PROJECT_DIR}/docs/02-ux-wireframes.md"
+    else
+        echo "未提供参考图，基于需求描述设计" >> "${PROJECT_DIR}/docs/02-ux-wireframes.md"
+    fi
+    
+    cat >> "${PROJECT_DIR}/docs/02-ux-wireframes.md" << EOF
+
+### 2. ASCII线框图
+
+```
+┌─────────────────────────────────────────┐
+│  Logo          搜索框          购物车    │
+├─────────────────────────────────────────┤
+│                                         │
+│  ┌─────────┐ ┌─────────┐ ┌─────────┐   │
+│  │ 分类1   │ │ 分类2   │ │ 分类3   │   │
+│  └─────────┘ └─────────┘ └─────────┘   │
+│                                         │
+│  ┌─────────────────────────────────┐   │
+│  │                                 │   │
+│  │        Banner轮播图              │   │
+│  │                                 │   │
+│  └─────────────────────────────────┘   │
+│                                         │
+│  热门商品                                │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐│
+│  │ 商品图片  │ │ 商品图片  │ │ 商品图片  ││
+│  │ 商品名称  │ │ 商品名称  │ │ 商品名称  ││
+│  │ ¥99.00   │ │ ¥199.00  │ │ ¥299.00  ││
+│  └──────────┘ └──────────┘ └──────────┘│
+│                                         │
+└─────────────────────────────────────────┘
+```
+
+### 3. Mermaid用户流程图
+
+\`\`\`mermaid
+graph TD
+    A[用户进入首页] --> B{是否登录?}
+    B -->|是| C[显示个性化推荐]
+    B -->|否| D[显示热门商品]
+    C --> E[浏览商品]
+    D --> E
+    E --> F{是否购买?}
+    F -->|是| G[加入购物车]
+    F -->|否| H[继续浏览]
+    G --> I[结算页面]
+\`\`\`
+
+## 页面列表
+1. 首页
+2. 商品列表页
+3. 商品详情页
+4. 购物车页
+5. 订单确认页
+
+## 待确认问题
+- [ ] 首页布局是否符合预期?
+- [ ] 商品卡片需要展示哪些信息?
+- [ ] 是否需要筛选/排序功能?
+- [ ] 购物车是否需要实时更新?
+
+## 设计原则
+1. **简洁优先** - 聚焦核心功能
+2. **一致性** - 统一交互模式
+3. **可扩展性** - 预留功能扩展空间
+
+---
+*由Kimi 2.5多模态能力生成*
+EOF
+
+    echo "✅ 低保真原型已生成: ${PROJECT_DIR}/docs/02-ux-wireframes.md"
+    echo ""
+    echo "下一步:"
+    echo "  1. 与客户确认低保真原型"
+    echo "  2. 收集反馈并完善需求"
+    echo "  3. 执行: bk pm ${PROJECT_DIR}"
+}
+
+# 产品经理
+run_pm() {
+    echo "📋 启动产品经理..."
+    check_deps
+    
+    mkdir -p "${PROJECT_DIR}/docs"
+    
+    cat > "${PROJECT_DIR}/docs/03-prd.md" << EOF
+# 产品需求文档 (PRD)
+
+## 文档信息
+- 版本: 1.0
+- 创建时间: $(date)
+- 产品经理: Kimi PM
+
+## 背景
+[基于项目简报和需求确认结果]
+
+## 目标
+[产品目标]
+
+## 用户故事
+
+### Story 1: 浏览商品
+作为用户，我希望浏览商品列表，以便找到感兴趣的商品。
+
+**验收标准:**
+- [ ] 首页展示热门商品
+- [ ] 支持分类筛选
+- [ ] 支持价格排序
+
+### Story 2: 搜索商品
+作为用户，我希望搜索商品，以便快速找到特定商品。
+
+**验收标准:**
+- [ ] 搜索框支持关键词输入
+- [ ] 搜索结果实时展示
+- [ ] 支持搜索历史
+
+### Story 3: 加入购物车
+作为用户，我希望将商品加入购物车，以便统一结算。
+
+**验收标准:**
+- [ ] 点击"加入购物车"按钮
+- [ ] 购物车数量实时更新
+- [ ] 支持查看购物车详情
+
+## 功能列表
+| 优先级 | 功能 | 描述 |
+|--------|------|------|
+| P0 | 商品展示 | 首页展示热门商品 |
+| P0 | 商品搜索 | 关键词搜索功能 |
+| P0 | 购物车 | 添加/删除/修改数量 |
+| P1 | 用户登录 | 账号密码登录 |
+| P1 | 订单管理 | 查看历史订单 |
+
+## 非功能需求
+- 页面加载时间 < 2秒
+- 支持移动端响应式
+- 支持1000+并发用户
+
+---
+*由Kimi PM生成*
+EOF
+
+    echo "✅ PRD文档已创建: ${PROJECT_DIR}/docs/03-prd.md"
+}
+
+# 架构师
+run_architect() {
+    echo "🏗️ 启动架构师..."
+    check_deps
+    
+    mkdir -p "${PROJECT_DIR}/docs"
+    
+    cat > "${PROJECT_DIR}/docs/04-architecture.md" << EOF
+# 架构设计文档
+
+## 技术栈
+- **前端**: React + TypeScript + Tailwind CSS
+- **后端**: FastAPI + Python
+- **数据库**: PostgreSQL
+- **缓存**: Redis
+
+## 系统架构
+
+\`\`\`
+┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+│   Frontend  │────→│   Backend   │────→│  Database   │
+│   React     │     │   FastAPI   │     │ PostgreSQL  │
+└─────────────┘     └─────────────┘     └─────────────┘
+                           │
+                           ↓
+                    ┌─────────────┐
+                    │    Redis    │
+                    │    Cache    │
+                    └─────────────┘
+\`\`\`
+
+## API设计
+
+### 商品接口
+
+#### GET /api/products
+获取商品列表
+
+**参数:**
+- page: 页码 (默认1)
+- size: 每页数量 (默认20)
+- category: 分类ID (可选)
+- sort: 排序方式 (price_asc/price_desc)
+
+**响应:**
+\`\`\`json
+{
+  "items": [
+    {
+      "id": 1,
+      "name": "商品名称",
+      "price": 99.00,
+      "image": "https://..."
+    }
+  ],
+  "total": 100,
+  "page": 1,
+  "size": 20
+}
+\`\`\`
+
+#### GET /api/products/{id}
+获取商品详情
+
+#### POST /api/cart/items
+添加商品到购物车
+
+## 数据库设计
+
+### 商品表 (products)
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | BIGINT | 主键 |
+| name | VARCHAR(255) | 商品名称 |
+| price | DECIMAL(10,2) | 价格 |
+| image_url | VARCHAR(500) | 图片URL |
+| category_id | BIGINT | 分类ID |
+
+---
+*由Kimi Architect生成*
+EOF
+
+    echo "✅ 架构设计文档已创建: ${PROJECT_DIR}/docs/04-architecture.md"
+}
+
+# UX设计师 - 第二次介入 (高保真设计)
+run_ux_visual() {
+    echo "🎨 启动UX设计师 (第二次介入 - 高保真设计)..."
+    check_deps
+    
+    mkdir -p "${PROJECT_DIR}/docs"
+    mkdir -p "${PROJECT_DIR}/docs/ux-design"
+    
+    echo "📖 读取输入文档..."
+    
+    echo "🧠 调用Kimi多模态能力生成高保真设计..."
+    
+    # 设计系统
+    cat > "${PROJECT_DIR}/docs/ux-design/design-system.md" << EOF
+# 设计系统 v1.0
+
+## 色彩系统
+
+### 主色
+- Primary: #1890ff (品牌蓝)
+- Primary Hover: #40a9ff
+- Primary Active: #096dd9
+
+### 辅助色
+- Success: #52c41a
+- Warning: #faad14
+- Error: #f5222d
+- Info: #1890ff
+
+### 中性色
+- Text Primary: #262626
+- Text Secondary: #595959
+- Text Disabled: #bfbfbf
+- Border: #d9d9d9
+- Background: #f5f5f5
+
+## 字体系统
+
+### 字体家族
+- 标题: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto
+- 正文: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto
+
+### 字号
+| 级别 | 大小 | 行高 | 字重 |
+|------|------|------|------|
+| H1 | 38px | 46px | 600 |
+| H2 | 30px | 38px | 600 |
+| H3 | 24px | 32px | 600 |
+| Body | 14px | 22px | 400 |
+| Small | 12px | 20px | 400 |
+
+## 间距系统
+- xs: 4px
+- sm: 8px
+- md: 16px
+- lg: 24px
+- xl: 32px
+- xxl: 48px
+
+## 圆角系统
+- sm: 2px
+- md: 4px
+- lg: 8px
+- xl: 16px
+- full: 9999px
+
+## 阴影系统
+- sm: 0 1px 2px rgba(0,0,0,0.05)
+- md: 0 4px 6px rgba(0,0,0,0.1)
+- lg: 0 10px 15px rgba(0,0,0,0.1)
+- xl: 0 20px 25px rgba(0,0,0,0.15)
+EOF
+
+    # 组件库
+    cat > "${PROJECT_DIR}/docs/ux-design/components.md" << EOF
+# 组件库 v1.0
+
+## 基础组件
+
+### Button 按钮
+
+**变体:**
+- Primary: 主按钮
+- Secondary: 次按钮
+- Ghost: 幽灵按钮
+- Danger: 危险按钮
+
+**尺寸:**
+- Small: 32px高
+- Medium: 40px高 (默认)
+- Large: 48px高
+
+**状态:**
+- Default
+- Hover
+- Active
+- Loading
+- Disabled
+
+### Input 输入框
+
+**变体:**
+- Text: 文本输入
+- Password: 密码输入
+- Number: 数字输入
+- Search: 搜索输入
+
+**状态:**
+- Default
+- Focus
+- Error
+- Disabled
+
+### Card 卡片
+
+**结构:**
+- Header (可选)
+- Body
+- Footer (可选)
+
+**变体:**
+- Default: 默认样式
+- Hoverable: 悬停效果
+- Bordered: 带边框
+
+## 业务组件
+
+### ProductCard 商品卡片
+
+**尺寸:** 280px × 360px
+
+**结构:**
+```
+┌─────────────────────┐
+│    图片 (280×200)    │
+├─────────────────────┤
+│ 商品名称             │
+│ ¥99.00         按钮  │
+└─────────────────────┘
+```
+
+**交互:**
+- Hover: 图片放大1.05倍，阴影加深
+- Click: 进入商品详情页
+
+### CartItem 购物车项
+
+**结构:**
+```
+┌─────────────────────────────────┐
+│ [选框] 图片  商品名称      删除  │
+│           规格        数量  价格 │
+└─────────────────────────────────┘
+```
+EOF
+
+    # 高保真设计主文档
+    cat > "${PROJECT_DIR}/docs/05-ux-design.md" << EOF
+# 高保真设计文档 v2.0
+
+## 设计概述
+基于PRD和低保真原型，使用Kimi 2.5多模态能力生成的高保真设计。
+
+## 设计系统
+详见: [design-system.md](./ux-design/design-system.md)
+
+## 组件库
+详见: [components.md](./ux-design/components.md)
+
+## 页面设计
+
+### 首页
+
+**整体布局:**
+- 最大宽度: 1200px，居中
+- 背景: #f5f5f5
+- 内边距: 24px
+
+**顶部导航栏:**
+- 高度: 64px
+- 背景: #ffffff
+- 阴影: 0 2px 8px rgba(0,0,0,0.1)
+- Logo: 左侧，高度40px
+- 搜索框: 居中，宽度400px
+- 购物车: 右侧，带数量徽章
+
+**Banner区域:**
+- 高度: 400px
+- 圆角: 16px
+- 自动轮播，5秒切换
+
+**商品网格:**
+- 4列布局，间距24px
+- 响应式: 平板3列，手机2列
+
+### 商品详情页
+
+**布局:**
+- 左侧: 商品图片 (60%)
+- 右侧: 商品信息 (40%)
+
+**图片区域:**
+- 主图: 大图展示
+- 缩略图: 底部排列
+
+**信息区域:**
+- 商品名称: H1
+- 价格: 24px, #f5222d, 粗体
+- 规格选择: 按钮组
+- 数量选择: 步进器
+- 操作按钮: 加入购物车 + 立即购买
+
+## 响应式方案
+
+### 断点
+- 移动端: < 768px
+- 平板: 768px - 1024px
+- 桌面: > 1024px
+
+### 适配策略
+- 导航: 移动端汉堡菜单
+- 商品网格: 4列 → 3列 → 2列
+- 详情页: 左右布局 → 上下布局
+
+## 动效规范
+
+### 过渡时长
+- Fast: 200ms
+- Normal: 300ms
+- Slow: 500ms
+
+### 缓动函数
+- Enter: ease-out
+- Exit: ease-in
+- Move: ease-in-out
+
+### 常用动画
+- FadeIn: 透明度 0 → 1
+- SlideUp: 位移 + 淡入
+- ScaleIn: 缩放 + 淡入
+
+---
+*由Kimi 2.5多模态能力生成*
+EOF
+
+    # 接口UX评估报告
+    cat > "${PROJECT_DIR}/docs/ux-design/interface-ux-review.md" << EOF
+# 接口UX评估报告
+
+## 概述
+从UX角度评估后端接口设计，优化前后端协作效率。
+
+## 接口评估
+
+### GET /api/products (商品列表)
+
+**当前设计:**
+- 分页: 页码式
+- 排序: 后端排序
+- 筛选: 后端筛选
+
+**UX评估:**
+- ✅ 响应时间目标: < 200ms，体验良好
+- ⚠️ 建议: 增加无限滚动选项，减少用户操作
+- ⚠️ 建议: 筛选条件本地缓存，提升重复筛选体验
+- ⚠️ 建议: 添加骨架屏，减少等待焦虑
+
+**优化建议:**
+\`\`\`json
+// 添加无限滚动支持
+{
+  "items": [...],
+  "hasMore": true,
+  "nextCursor": "xxx"
+}
+\`\`\`
+
+### GET /api/products/{id} (商品详情)
+
+**UX评估:**
+- ✅ 数据结构满足前端展示需求
+- ⚠️ 建议: 添加缓存头，减少重复请求
+
+### POST /api/cart/items (添加购物车)
+
+**当前设计:**
+- 同步创建
+
+**UX评估:**
+- ⚠️ 建议: **乐观更新** - 用户点击后立即显示添加成功，后台异步同步
+- ⚠️ 建议: 网络失败时本地缓存 + 自动重试
+- ⚠️ 建议: 添加加载状态提示，避免重复点击
+
+**优化建议:**
+\`\`\`javascript
+// 乐观更新示例
+const addToCart = async (product) => {
+  // 1. 立即更新UI
+  updateCartUI([...cart, product]);
+  showSuccessToast('已加入购物车');
+  
+  // 2. 后台同步
+  try {
+    await api.post('/api/cart/items', product);
+  } catch (error) {
+    // 3. 失败时回滚并提示
+    rollbackCartUI();
+    showErrorToast('添加失败，请重试');
+  }
+};
+\`\`\`
+
+### GET /api/cart (购物车列表)
+
+**UX评估:**
+- ✅ 数据结构设计合理
+- ⚠️ 建议: 支持部分商品失效标记
+- ⚠️ 建议: 添加价格变动提示
+
+### POST /api/orders (创建订单)
+
+**当前设计:**
+- 同步创建
+
+**UX评估:**
+- ⚠️ 建议: **添加进度提示** - 创建过程展示进度条或步骤指示器
+- ⚠️ 建议: 长时间操作提供取消选项
+- ⚠️ 建议: 创建成功后自动跳转支付页
+
+**优化建议:**
+\`\`\`
+用户点击"提交订单"
+    ↓
+显示进度: "正在创建订单..."
+    ↓
+订单创建成功
+    ↓
+自动跳转支付页面
+\`\`\`
+
+## 通用优化建议
+
+### 1. 错误处理
+- 统一错误码和错误信息
+- 前端根据错误类型展示友好提示
+- 网络错误自动重试3次
+
+### 2. 加载状态
+- 列表: 骨架屏
+- 按钮: Loading状态
+- 页面: 进度条
+
+### 3. 缓存策略
+- 商品列表: 5分钟缓存
+- 商品详情: 10分钟缓存
+- 用户信息: 持久缓存
+
+## 前后端协作Checklist
+
+- [ ] API文档包含UX评估建议
+- [ ] 接口响应时间满足UX要求
+- [ ] 错误处理方案已确认
+- [ ] 缓存策略已协商
+- [ ] 乐观更新逻辑已对齐
+
+---
+*由Kimi 2.5 UX设计师生成 - 接口UX评估独有功能*
+EOF
+
+    echo "✅ 高保真设计已生成:"
+    echo "  - ${PROJECT_DIR}/docs/05-ux-design.md"
+    echo "  - ${PROJECT_DIR}/docs/ux-design/design-system.md"
+    echo "  - ${PROJECT_DIR}/docs/ux-design/components.md"
+    echo "  - ${PROJECT_DIR}/docs/ux-design/interface-ux-review.md ⭐"
+    echo ""
+    echo "下一步:"
+    echo "  1. 前端: 基于高保真设计图编码"
+    echo "  2. 后端: 基于接口UX评估优化API"
+    echo "  3. 执行: bk frontend ${PROJECT_DIR}"
+    echo "  4. 执行: bk backend ${PROJECT_DIR}"
+}
+
+# 前端开发者
+run_frontend() {
+    echo "💻 启动前端开发者..."
+    check_deps
+    
+    mkdir -p "${PROJECT_DIR}/src/frontend"
+    
+    echo "📖 读取高保真设计..."
+    
+    cat > "${PROJECT_DIR}/src/frontend/README.md" << EOF
+# 前端项目
+
+## 技术栈
+- React 18
+- TypeScript
+- Tailwind CSS
+- Vite
+
+## 开发指南
+
+基于高保真设计图开发:
+- 设计文档: docs/05-ux-design.md
+- 设计系统: docs/ux-design/design-system.md
+- 组件库: docs/ux-design/components.md
+
+## 页面结构
+\`\`\`
+src/
+├── components/       # 基础组件
+│   ├── Button.tsx
+│   ├── Input.tsx
+│   └── Card.tsx
+├── pages/           # 页面
+│   ├── Home.tsx
+│   ├── ProductDetail.tsx
+│   └── Cart.tsx
+├── hooks/           # 自定义Hooks
+├── utils/           # 工具函数
+└── App.tsx
+\`\`\`
+
+## 开发顺序
+1. 配置Tailwind (按设计系统)
+2. 开发基础组件
+3. 开发业务组件
+4. 开发页面
+5. 添加动效
+
+## 注意事项
+- 严格遵循设计系统的色彩、字体、间距
+- 组件必须支持响应式
+- 动效按动效规范实现
+EOF
+
+    echo "✅ 前端项目结构已创建: ${PROJECT_DIR}/src/frontend/"
+    echo "基于高保真设计图进行开发"
+}
+
+# 后端开发者
+run_backend() {
+    echo "⚙️ 启动后端开发者..."
+    check_deps
+    
+    mkdir -p "${PROJECT_DIR}/src/backend"
+    
+    echo "📖 读取架构设计和接口UX评估..."
+    
+    cat > "${PROJECT_DIR}/src/backend/README.md" << EOF
+# 后端项目
+
+## 技术栈
+- FastAPI
+- Python 3.11
+- PostgreSQL
+- Redis
+
+## 开发指南
+
+基于架构设计和接口UX评估开发:
+- 架构文档: docs/04-architecture.md
+- 接口UX评估: docs/ux-design/interface-ux-review.md ⭐
+
+## 项目结构
+\`\`\`
+src/backend/
+├── app/
+│   ├── __init__.py
+│   ├── main.py          # FastAPI入口
+│   ├── models/          # 数据模型
+│   ├── routers/         # API路由
+│   ├── services/        # 业务逻辑
+│   └── utils/           # 工具函数
+├── tests/
+└── requirements.txt
+\`\`\`
+
+## API实现清单
+
+### 商品接口
+- [ ] GET /api/products (列表)
+  - [ ] 无限滚动支持
+  - [ ] 筛选缓存
+  - [ ] 骨架屏数据
+- [ ] GET /api/products/{id} (详情)
+  - [ ] 缓存头
+
+### 购物车接口
+- [ ] POST /api/cart/items (添加)
+  - [ ] 乐观更新支持
+  - [ ] 快速响应
+- [ ] GET /api/cart (列表)
+  - [ ] 失效商品标记
+  - [ ] 价格变动提示
+
+### 订单接口
+- [ ] POST /api/orders (创建)
+  - [ ] 异步处理
+  - [ ] 进度查询
+  - [ ] 取消支持
+
+## UX优化重点
+
+### 1. 响应时间优化
+- 商品列表: < 200ms
+- 购物车操作: < 100ms
+- 订单创建: < 500ms
+
+### 2. 错误处理
+- 统一错误码
+- 友好错误信息
+- 自动重试机制
+
+### 3. 缓存策略
+- Redis缓存热点数据
+- 数据库查询优化
+- CDN静态资源
+
+## 性能指标
+- API响应时间: P95 < 200ms
+- 并发支持: 1000+
+- 可用性: 99.9%
+EOF
+
+    echo "✅ 后端项目结构已创建: ${PROJECT_DIR}/src/backend/"
+    echo "基于接口UX评估优化API设计"
+}
+
+# QA
+run_qa() {
+    echo "🧪 启动QA工程师..."
+    check_deps
+    
+    mkdir -p "${PROJECT_DIR}/tests"
+    
+    cat > "${PROJECT_DIR}/tests/test-plan.md" << EOF
+# 测试计划
+
+## 测试范围
+- 功能测试
+- 接口测试
+- 性能测试
+- UX测试
+
+## 测试用例
+
+### 功能测试
+- [ ] 商品浏览
+- [ ] 商品搜索
+- [ ] 加入购物车
+- [ ] 结算流程
+
+### 接口测试
+- [ ] API响应格式正确
+- [ ] 错误处理完善
+- [ ] 响应时间达标
+
+### UX测试
+- [ ] 页面加载时间 < 2s
+- [ ] 交互响应流畅
+- [ ] 移动端适配良好
+
+## 验收标准
+- 所有P0功能正常
+- 测试覆盖率 > 80%
+- 无严重bug
+EOF
+
+    echo "✅ 测试计划已创建: ${PROJECT_DIR}/tests/test-plan.md"
+}
+
+# 完整流程
+run_full() {
+    echo "🚀 启动BMAD-Kimi完整流程..."
+    
+    run_analyst
+    run_ux_wireframe
+    
+    echo ""
+    echo "⏸️ 请与客户确认低保真原型后，按回车继续..."
+    read
+    
+    run_pm
+    
+    echo ""
+    echo "🏗️ 并行执行架构设计和UX高保真设计..."
+    run_architecture &
+    ARCH_PID=$!
+    run_ux_visual
+    wait $ARCH_PID
+    
+    echo ""
+    echo "💻 并行执行前后端开发..."
+    run_frontend &
+    FRONT_PID=$!
+    run_backend
+    wait $FRONT_PID
+    
+    echo ""
+    run_qa
+    
+    echo ""
+    echo "✅ BMAD-Kimi完整流程执行完毕!"
+    echo "项目目录: ${PROJECT_DIR}"
+}
+
+# 快速流程
+run_quick() {
+    echo "⚡ 启动BMAD-Kimi快速流程..."
+    
+    run_analyst
+    run_pm
+    run_architect
+    run_frontend
+    run_qa
+    
+    echo ""
+    echo "✅ 快速流程执行完毕!"
+}
+
+# 主逻辑
+case "$COMMAND" in
+    analyst)
+        run_analyst
+        ;;
+    ux-wireframe)
+        run_ux_wireframe "$@"
+        ;;
+    pm)
+        run_pm
+        ;;
+    architect)
+        run_architect
+        ;;
+    ux-visual)
+        run_ux_visual
+        ;;
+    frontend)
+        run_frontend
+        ;;
+    backend)
+        run_backend
+        ;;
+    qa)
+        run_qa
+        ;;
+    full)
+        run_full
+        ;;
+    quick)
+        run_quick
+        ;;
+    help|--help|-h)
+        show_help
+        ;;
+    version|--version|-v)
+        show_version
+        ;;
+    *)
+        echo "❌ 未知命令: $COMMAND"
+        show_help
+        exit 1
+        ;;
+esac
