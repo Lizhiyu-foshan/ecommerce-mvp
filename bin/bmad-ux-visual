@@ -1,0 +1,152 @@
+#!/bin/bash
+#
+# bmad-ux-visual - UX设计师第二次介入：高保真视觉设计
+# BMAD-METHOD v2.0
+#
+
+set -e
+
+PROJECT_DIR="${1:-.}"
+cd "$PROJECT_DIR"
+
+echo "🎨 BMAD-METHOD v2.0 - UX设计师第二次介入"
+echo "=========================================="
+echo ""
+echo "任务: 基于PRD和低保真原型创建高保真设计"
+echo "输出: docs/ux-design-v2.md (包含接口UX评估)"
+echo ""
+
+# 检查输入文件
+if [ ! -f "docs/prd.md" ]; then
+    echo "❌ 错误: 未找到 docs/prd.md"
+    echo "请先执行: bmad-pm"
+    exit 1
+fi
+
+if [ ! -f "docs/ux-wireframes-v1.md" ]; then
+    echo "⚠️ 警告: 未找到 docs/ux-wireframes-v1.md"
+    echo "建议先执行: bmad-ux-wireframe"
+fi
+
+if [ ! -f "docs/architecture.md" ]; then
+    echo "⚠️ 警告: 未找到 docs/architecture.md"
+    echo "建议并行执行: bmad-architect"
+fi
+
+echo "📖 读取输入文档..."
+PRD=$(cat docs/prd.md)
+WIREFRAMES=$(cat docs/ux-wireframes-v1.md 2>/dev/null || echo "无低保真原型")
+ARCHITECTURE=$(cat docs/architecture.md 2>/dev/null || echo "架构文档待生成")
+
+# 创建输出目录
+mkdir -p docs
+
+echo "🎨 启动UX设计师Agent (Kimi 2.5多模态增强)..."
+echo ""
+
+# 使用opencode启动UX设计师Agent
+cat > /tmp/ux-visual-prompt.md << 'EOF'
+你是 UX 设计师 Alice，使用 Kimi 2.5 的多模态能力进行高保真视觉设计。
+
+## 任务背景
+基于已确认的PRD和低保真原型，设计高保真UI设计稿和交互规范。
+
+## 输入信息
+- PRD文档: {prd}
+- 低保真原型: {wireframes}
+- 架构设计: {architecture}
+
+## 设计目标
+1. 输出可直接用于开发的高保真设计图
+2. 建立完整的设计系统和组件库
+3. 为前后端并行开发提供清晰规范
+4. ⭐ 评估后端接口对前端交互的支持
+
+## Kimi多模态能力深度应用
+
+### 1. 视觉风格定义
+- 分析参考图风格特征
+- 定义完整设计系统
+
+### 2. 高保真页面设计
+- 详细视觉描述 (文字→图像想象)
+- 交互规范
+- 动效规范
+
+### 3. 组件库设计
+- 基础组件规范
+- 业务组件规范
+
+### 4. 响应式设计
+- 多设备适配方案
+
+### 5. ⭐ 接口UX评估 (独有功能)
+基于架构设计，从UX角度评估后端接口:
+- 响应速度是否满足交互需求
+- 数据结构是否便于前端展示
+- 提出优化建议
+
+## 输出要求
+
+创建文件: docs/ux-design-v2.md
+
+内容结构:
+```markdown
+# 高保真设计文档 v2.0
+
+## 设计系统
+- 色彩系统
+- 字体系统
+- 间距系统
+- 圆角系统
+- 阴影系统
+
+## 页面设计
+[详细视觉描述]
+
+## 组件库
+[所有组件详细规范]
+
+## 动效规范
+[动画和过渡效果]
+
+## 响应式方案
+[各端适配]
+
+## ⭐ 接口UX评估报告
+[后端接口评估和优化建议]
+```
+EOF
+
+# 替换变量
+sed -i "s|{prd}|$PRD|g" /tmp/ux-visual-prompt.md
+sed -i "s|{wireframes}|$WIREFRAMES|g" /tmp/ux-visual-prompt.md
+sed -i "s|{architecture}|$ARCHITECTURE|g" /tmp/ux-visual-prompt.md
+
+# 启动Agent
+echo "🚀 启动UX设计师Agent..."
+opencode agent run /tmp/ux-visual-prompt.md \
+    --output docs/ux-design-v2.md \
+    --model kimi-coding/k2p5
+
+if [ -f "docs/ux-design-v2.md" ]; then
+    echo ""
+    echo "✅ 高保真设计完成!"
+    echo "📄 输出文件: docs/ux-design-v2.md"
+    echo ""
+    echo "包含内容:"
+    echo "  ✓ 设计系统 (色彩/字体/间距)"
+    echo "  ✓ 页面设计 (详细视觉描述)"
+    echo "  ✓ 组件库规范"
+    echo "  ✓ 响应式方案"
+    echo "  ✓ 动效规范"
+    echo "  ✓ ⭐ 接口UX评估报告"
+    echo ""
+    echo "下一步:"
+    echo "  1. 前端开发者基于设计图编码"
+    echo "  2. 后端开发者基于接口UX评估优化API"
+    echo "  3. 执行: bmad-dev"
+else
+    echo "❌ 设计失败"
+    exit 1
+fi

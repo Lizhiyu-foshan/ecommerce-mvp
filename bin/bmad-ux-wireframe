@@ -1,0 +1,117 @@
+#!/bin/bash
+#
+# bmad-ux-wireframe - UX设计师第一次介入：低保真原型设计
+# BMAD-METHOD v2.0
+#
+
+set -e
+
+PROJECT_DIR="${1:-.}"
+cd "$PROJECT_DIR"
+
+echo "🎨 BMAD-METHOD v2.0 - UX设计师第一次介入"
+echo "=========================================="
+echo ""
+echo "任务: 基于项目简报创建低保真原型"
+echo "输出: docs/ux-wireframes-v1.md"
+echo ""
+
+# 检查输入文件
+if [ ! -f "docs/project-brief.md" ]; then
+    echo "❌ 错误: 未找到 docs/project-brief.md"
+    echo "请先执行: bmad-analyst"
+    exit 1
+fi
+
+echo "📖 读取项目简报..."
+PROJECT_BRIEF=$(cat docs/project-brief.md)
+
+# 创建输出目录
+mkdir -p docs
+
+echo "🎨 启动UX设计师Agent (Kimi 2.5多模态增强)..."
+echo ""
+
+# 使用opencode启动UX设计师Agent
+cat > /tmp/ux-wireframe-prompt.md << 'EOF'
+你是 UX 设计师 Alice，使用 Kimi 2.5 的多模态能力进行低保真原型设计。
+
+## 任务背景
+基于分析师提供的初步用例，设计低保真线框图作为与客户沟通的基础。
+
+## 输入信息
+- 项目简报: {project_brief}
+
+## 设计目标
+1. 快速可视化核心功能流程
+2. 激发客户对需求的补充描述
+3. 建立团队对产品的统一认知
+
+## Kimi多模态能力应用
+
+### 1. 视觉参考分析 (图像理解)
+如有提供参考图，请分析:
+- 布局结构
+- 配色方案
+- 交互模式
+
+### 2. 线框图设计 (文本→视觉描述)
+为每个核心页面设计线框图:
+- 使用ASCII艺术或详细文字描述
+- 标注关键元素和交互
+
+### 3. 用户流程图 (可视化描述)
+使用Mermaid语法描述用户核心流程
+
+## 输出要求
+
+创建文件: docs/ux-wireframes-v1.md
+
+内容结构:
+```markdown
+# 低保真原型设计 v1.0
+
+## 设计概述
+- 设计目标
+- 目标用户
+- 设计原则
+
+## 页面线框图
+[每个页面的ASCII线框图]
+
+## 用户流程图
+[Mermaid图表]
+
+## 待确认问题
+与客户讨论的关键问题列表
+```
+
+设计原则:
+1. 简洁优先 - 聚焦核心功能
+2. 一致性 - 统一风格
+3. 可扩展性 - 预留未来功能
+4. 用户友好 - 降低认知负担
+EOF
+
+# 替换变量
+sed -i "s|{project_brief}|$PROJECT_BRIEF|g" /tmp/ux-wireframe-prompt.md
+
+# 启动Agent
+echo "🚀 启动UX设计师Agent..."
+opencode agent run /tmp/ux-wireframe-prompt.md \
+    --output docs/ux-wireframes-v1.md \
+    --model kimi-coding/k2p5
+
+if [ -f "docs/ux-wireframes-v1.md" ]; then
+    echo ""
+    echo "✅ 低保真原型设计完成!"
+    echo "📄 输出文件: docs/ux-wireframes-v1.md"
+    echo ""
+    echo "下一步:"
+    echo "  1. 与客户确认低保真原型"
+    echo "  2. 收集反馈并完善需求"
+    echo "  3. 执行: bmad-pm"
+else
+    echo "❌ 设计失败"
+    exit 1
+fi
